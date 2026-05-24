@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -115,7 +116,7 @@ class HomeTabScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
+            ).animate().fadeIn(delay: 100.ms, duration: 350.ms),
 
             const Gap(12),
 
@@ -125,7 +126,7 @@ class HomeTabScreen extends ConsumerWidget {
               child: config?.hasAnnouncement == true
                   ? _AnnouncementBanner(text: config!.announcement)
                   : _StoreBanner(config: config),
-            ),
+            ).animate().fadeIn(delay: 200.ms, duration: 350.ms).slideY(begin: 0.04, curve: Curves.easeOut),
 
             const Gap(24),
 
@@ -298,7 +299,7 @@ class HomeTabScreen extends ConsumerWidget {
                     ),
                     const Gap(24),
                   ],
-                );
+                ).animate().fadeIn(delay: 300.ms, duration: 350.ms);
               },
             ),
 
@@ -392,14 +393,14 @@ class HomeTabScreen extends ConsumerWidget {
                       const Gap(24),
                     ],
                   ),
-                );
+                ).animate().fadeIn(delay: 350.ms, duration: 350.ms);
               },
             ),
 
             // ── Featured ───────────────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: const Row(
                 children: [
                   Text('Featured',
                       style: TextStyle(
@@ -408,7 +409,7 @@ class HomeTabScreen extends ConsumerWidget {
                           color: AppColors.onBackground)),
                 ],
               ),
-            ),
+            ).animate().fadeIn(delay: 400.ms, duration: 350.ms),
             const Gap(12),
             featuredAsync.when(
               loading: () => const SizedBox(
@@ -445,14 +446,14 @@ class HomeTabScreen extends ConsumerWidget {
             const Gap(24),
 
             // ── Browse Categories ──────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Browse Categories',
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: const Text('Browse Categories',
                   style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.onBackground)),
-            ),
+            ).animate().fadeIn(delay: 500.ms, duration: 350.ms),
             const Gap(12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -107,7 +107,7 @@ class ProductListScreen extends ConsumerWidget {
                     ),
                     itemCount: products.length,
                     itemBuilder: (context, i) =>
-                        ProductCard(product: products[i]),
+                        ProductCard(product: products[i], animationIndex: i),
                   ),
                 );
               },
