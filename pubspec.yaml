@@ -1,0 +1,56 @@
+name: dodominimart
+description: DodoMiniMart - Community convenience store ordering app
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Networking
+  dio: ^5.4.3
+  flutter_secure_storage: ^9.0.0
+  connectivity_plus: ^6.0.3
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.0.0
+  url_launcher: ^6.3.0
+
+  # State management + routing
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.7
+
+  # Local storage
+  shared_preferences: ^2.3.2
+
+  # Images
+  cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+  # UI helpers
+  flutter_svg: ^2.0.10+1
+  gap: ^3.0.1
+  badges: ^3.1.2
+  shimmer: ^3.0.0
+  smooth_page_indicator: ^1.1.0
+  carousel_slider: ^5.0.0
+  fluttertoast: ^8.2.8
+  intl: ^0.19.0
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

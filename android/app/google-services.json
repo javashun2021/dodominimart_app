@@ -1,0 +1,36 @@
+{
+  "project_info": {
+    "project_number": "558574673371",
+    "project_id": "dodominimart",
+    "storage_bucket": "dodominimart.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:558574673371:android:3e405776572e449abb5bfe",
+        "android_client_info": {
+          "package_name": "com.dodominimart.app"
+        }
+      },
+      "oauth_client": [{
+		"client_id": "600271771039-kg12m6vqi19gq76fjpko2cmelp6mufbf.apps.googleusercontent.com",
+		"client_type": 1,
+		"android_info": {
+		"package_name": "com.dodominimart.app",
+		"certificate_hash": "ff92e2ec3ce3dda65887d2cd1778295ffccebe41"
+		}
+	  }],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAy7K-Y_a0UgR72uZKo4PywsU0YL62cy70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
