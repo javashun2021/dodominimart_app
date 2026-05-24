@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/storage_service.dart';
 import '../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -21,7 +22,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   void _checkAuth() {
-    ref.listenManual<AuthState>(authProvider, (prev, next) {
+    ref.listenManual<AuthState>(authProvider, (prev, next) async {
       if (!mounted) return;
       if (next.status == AuthStatus.authenticated) {
         final user = next.user;
@@ -31,7 +32,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           context.go('/home');
         }
       } else if (next.status == AuthStatus.unauthenticated) {
-        context.go('/login');
+        final storage = ref.read(storageServiceProvider);
+        final agreed = await storage.hasAgreedToTerms();
+        if (!mounted) return;
+        context.go(agreed ? '/login' : '/agreement');
       }
     }, fireImmediately: true);
   }

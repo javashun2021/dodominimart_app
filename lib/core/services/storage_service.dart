@@ -8,6 +8,7 @@ class StorageService {
 
   static const _tokenKey = 'auth_token';
   static const _usernameKey = 'saved_username';
+  static const _termsAgreedKey = 'terms_agreed';
 
   // flutter_secure_storage 在 web 端的 localStorage key 前缀
   static const _webPrefix = 'FlutterSecureStorage';
@@ -23,6 +24,15 @@ class StorageService {
 
   Future<void> saveUsername(String username) =>
       _storage.write(key: _usernameKey, value: username);
+
+  Future<bool> hasAgreedToTerms() async {
+    final val = await _storage.read(key: _termsAgreedKey);
+    return val == 'true';
+  }
+
+  Future<void> saveTermsAgreed() async {
+    await _storage.write(key: _termsAgreedKey, value: 'true');
+  }
 
   Future<void> clearAll() async {
     // 先走 secure storage 的删除

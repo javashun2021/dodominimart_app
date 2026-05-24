@@ -40,6 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscureConfirmPwd = true;
   bool _isLoading = false;
   bool _sendingCode = false;
+  bool _agreedToTerms = false;
   int _countdown = 0;
   Timer? _timer;
 
@@ -62,6 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() {
       _mode = mode;
       _countdown = 0;
+      _agreedToTerms = false;
       _loginFormKey.currentState?.reset();
       _registerFormKey.currentState?.reset();
     });
@@ -120,6 +122,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _register() async {
     if (!_registerFormKey.currentState!.validate()) return;
+    if (!_agreedToTerms) {
+      _showError('Please agree to the Terms of Service and Privacy Policy.');
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       await ref.read(authProvider.notifier).registerWithEmail(
@@ -536,7 +542,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ],
           ),
-          const Gap(20),
+          const Gap(14),
+          // 条款同意 checkbox
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: _agreedToTerms,
+                activeColor: AppColors.primary,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onChanged: (v) =>
+                    setState(() => _agreedToTerms = v ?? false),
+              ),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text('I agree to the ',
+                        style: TextStyle(
+                            fontSize: 13, color: AppColors.onSurface)),
+                    GestureDetector(
+                      onTap: () => context.push('/terms'),
+                      child: const Text(
+                        'Terms of Service',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const Text(' and ',
+                        style: TextStyle(
+                            fontSize: 13, color: AppColors.onSurface)),
+                    GestureDetector(
+                      onTap: () => context.push('/privacy'),
+                      child: const Text(
+                        'Privacy Policy',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Gap(16),
           SizedBox(
             width: double.infinity,
             height: 50,
