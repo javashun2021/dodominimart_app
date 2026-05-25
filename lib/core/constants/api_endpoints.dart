@@ -3,10 +3,11 @@ import 'package:flutter/foundation.dart';
 abstract final class ApiEndpoints {
   // Android emulator → host machine localhost
   // Chrome / desktop → localhost:8080 directly
+  //本地=localhost，线上=dodominimart.com
   static String get baseUrl {
-    if (kIsWeb) return Uri.base.origin; // 自动使用当前页面域名，本地=localhost，线上=dodominimart.com
-    if (_isAndroid) return 'http://10.0.2.2:8080'; // 内网真机
-    return 'http://localhost:8080'; // macOS/Windows 桌面直连
+    if (kIsWeb) return 'https://dodominimart.com'; //web
+    if (_isAndroid) return 'https://dodominimart.com'; // 内网真机
+    return 'https://dodominimart.com'; // macOS/Windows 桌面直连
   }
 
   static bool get _isAndroid {
