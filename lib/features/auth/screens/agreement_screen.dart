@@ -159,12 +159,6 @@ class _AgreementScreenState extends ConsumerState<AgreementScreen> {
                           title: 'Delivery Address',
                           desc: 'Used to fulfill your orders and calculate delivery.',
                         ),
-                        const _Divider(),
-                        _DataItem(
-                          icon: Icons.payment_outlined,
-                          title: 'Payment Information',
-                          desc: 'Processed securely by GCash — we do not store card or payment details.',
-                        ),
                       ],
                     ),
                   ),
