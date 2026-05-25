@@ -4,7 +4,7 @@ abstract final class ApiEndpoints {
   // Android emulator → host machine localhost
   // Chrome / desktop → localhost:8080 directly
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost'; // nginx 反向代理，/api/ → 8080
+    if (kIsWeb) return Uri.base.origin; // 自动使用当前页面域名，本地=localhost，线上=dodominimart.com
     if (_isAndroid) return 'http://10.0.2.2:8080'; // 内网真机
     return 'http://localhost:8080'; // macOS/Windows 桌面直连
   }
