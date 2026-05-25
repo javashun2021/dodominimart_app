@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/dodo_logo.dart';
 import '../providers/auth_provider.dart';
 
 enum _AuthMode { login, register }
@@ -186,33 +187,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const Gap(40),
 
               // ── Logo ────────────────────────────────────────────────────
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.storefront,
-                    color: Colors.white, size: 44),
-              ),
-              const Gap(16),
-              const Text(
-                'DodoMiniMart',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.onBackground,
-                ),
-              ),
-              const Gap(4),
+              const DodoLogo(size: 88),
+              const Gap(14),
               const Text(
                 'Your community store, delivered.',
                 style:

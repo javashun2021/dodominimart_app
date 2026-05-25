@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/dodo_logo.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -37,21 +38,7 @@ class HomeTabScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFFF8F9FB),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.storefront, color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 8),
-            const Text('DodoMiniMart'),
-          ],
-        ),
+        title: const DodoLogoBar(),
         actions: [
           IconButton(
             icon: const Icon(Icons.search_outlined),
