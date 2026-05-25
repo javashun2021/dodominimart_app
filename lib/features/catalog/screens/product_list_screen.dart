@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../cart/providers/cart_provider.dart';
@@ -92,22 +93,26 @@ class ProductListScreen extends ConsumerWidget {
                     subtitle: 'Try a different category.',
                   );
                 }
+                final desktop = isDesktop(context);
+                final columns = desktop ? 4 : 2;
+                final padding = desktop ? 20.0 : 12.0;
                 return RefreshIndicator(
                   color: AppColors.primary,
                   onRefresh: () async =>
                       ref.invalidate(productsProvider(selectedCatId)),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.72,
+                  child: centeredContent(
+                    child: GridView.builder(
+                      padding: EdgeInsets.all(padding),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisSpacing: padding,
+                        crossAxisSpacing: padding,
+                        childAspectRatio: 0.72,
+                      ),
+                      itemCount: products.length,
+                      itemBuilder: (context, i) =>
+                          ProductCard(product: products[i], animationIndex: i),
                     ),
-                    itemCount: products.length,
-                    itemBuilder: (context, i) =>
-                        ProductCard(product: products[i], animationIndex: i),
                   ),
                 );
               },

@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/dodo_logo.dart';
 import '../providers/auth_provider.dart';
 
@@ -175,29 +176,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            children: [
-              const Gap(40),
+  Widget _buildFormPanel(BuildContext context, {bool showLogo = true}) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        children: [
+          Gap(showLogo ? 40 : 60),
 
-              // ── Logo ────────────────────────────────────────────────────
-              const DodoLogo(size: 88),
-              const Gap(14),
-              const Text(
-                'Your community store, delivered.',
-                style:
-                    TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
-              ),
+          if (showLogo) ...[
+            const DodoLogo(size: 88),
+            const Gap(14),
+            const Text(
+              'Your community store, delivered.',
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+            ),
+            const Gap(28),
+          ],
 
-              const Gap(28),
-
-              // ── Tab 切换 ────────────────────────────────────────────────
+          // ── Tab 切换 ────────────────────────────────────────────────
               Container(
                 height: 44,
                 decoration: BoxDecoration(
@@ -317,8 +313,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const Gap(24),
             ],
           ),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isDesktop(context)) {
+      return Scaffold(
+        body: Row(
+          children: [
+            // 左侧品牌面板
+            Container(
+              width: 420,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFFB347), Color(0xFFE85D04)],
+                ),
+              ),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  DodoLogo(size: 120, showShadow: false),
+                  SizedBox(height: 28),
+                  Text(
+                    'DODO MiniMart',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Your community store, delivered.',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 右侧表单区
+            Expanded(
+              child: SafeArea(
+                child: Center(
+                  child: SizedBox(
+                    width: 420,
+                    child: _buildFormPanel(context, showLogo: false),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(child: _buildFormPanel(context)),
     );
   }
 

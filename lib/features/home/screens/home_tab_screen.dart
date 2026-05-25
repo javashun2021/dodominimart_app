@@ -54,7 +54,11 @@ class HomeTabScreen extends ConsumerWidget {
           ref.invalidate(productsProvider);
           ref.invalidate(categoriesProvider);
         },
-        child: ListView(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1140),
+            child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
             // ── 问候语 ─────────────────────────────────────────────────────
@@ -447,6 +451,8 @@ class HomeTabScreen extends ConsumerWidget {
               child: _CategoriesGrid(),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );
