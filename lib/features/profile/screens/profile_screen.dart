@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_config_provider.dart';
-import '../../auth/models/address_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/providers/orders_provider.dart';
 import '../../runner/models/runner_application_model.dart';
@@ -228,17 +226,28 @@ class ProfileScreen extends ConsumerWidget {
           _CombinedInfoTile(
             phone: user.phoneNumber ?? 'Not set',
             address: defaultAddress?.fullAddress ?? 'Not set',
-            onEditAddress: () => showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.white,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (_) => _AddressEditSheet(current: defaultAddress),
-            ),
+            onEditAddress: () => context.push('/addresses'),
           ),
 
+          const Gap(16),
+
+          // ── My Favourites ────────────────────────────────────────────────
+          _SectionLabel('Shopping'),
+          const Gap(10),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: _MenuTile(
+              icon: Icons.favorite_border_rounded,
+              iconColor: Colors.red[400]!,
+              label: 'My Favourites',
+              onTap: () => context.push('/favorites'),
+              isFirst: true,
+              isLast: true,
+            ),
+          ),
           const Gap(16),
 
           // ── Contact Us ───────────────────────────────────────────────────
@@ -554,155 +563,6 @@ class _CombinedInfoTile extends StatelessWidget {
   }
 }
 
-// ── 地址编辑底部弹窗 ──────────────────────────────────────────────────────────────
-
-class _AddressEditSheet extends ConsumerStatefulWidget {
-  final AddressModel? current;
-  const _AddressEditSheet({this.current});
-
-  @override
-  ConsumerState<_AddressEditSheet> createState() => _AddressEditSheetState();
-}
-
-class _AddressEditSheetState extends ConsumerState<_AddressEditSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _ctrl;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.current?.fullAddress ?? '');
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-    try {
-      final client = ref.read(apiClientProvider);
-      final address = _ctrl.text.trim();
-      if (widget.current != null) {
-        final res = await client.put(
-          ApiEndpoints.memberAddress(
-              widget.current!.addressId.toString()),
-          data: {
-            'label': widget.current!.label.isEmpty
-                ? 'Home'
-                : widget.current!.label,
-            'fullAddress': address,
-            'isDefault': '1',
-          },
-        );
-        final json = res.data!;
-        if (json['code'] != 0) throw Exception(json['msg']);
-      } else {
-        final res = await client.post(
-          ApiEndpoints.memberAddresses,
-          data: {
-            'label': 'Home',
-            'fullAddress': address,
-            'isDefault': '1',
-          },
-        );
-        final json = res.data!;
-        if (json['code'] != 0) throw Exception(json['msg']);
-      }
-      ref.invalidate(addressesProvider);
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.location_on_outlined,
-                      color: AppColors.primary, size: 18),
-                ),
-                const SizedBox(width: 10),
-                const Text('Edit Delivery Address',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const Gap(16),
-            TextFormField(
-              controller: _ctrl,
-              autofocus: true,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Block, Lot, Street, Barangay, City',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
-              ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Required' : null,
-            ),
-            const Gap(16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Text('Save Address'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Runner 申请区块 ───────────────────────────────────────────────────────────────
 
 class _RunnerSection extends StatelessWidget {
@@ -835,6 +695,66 @@ class _RunnerSection extends StatelessWidget {
       );
     }
     return const SizedBox.shrink();
+  }
+}
+
+// ── 通用菜单 Tile ─────────────────────────────────────────────────────────────────
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final VoidCallback onTap;
+  final bool isFirst;
+  final bool isLast;
+
+  const _MenuTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.onTap,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.vertical(
+        top: isFirst ? const Radius.circular(16) : Radius.zero,
+        bottom: isLast ? const Radius.circular(16) : Radius.zero,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.onBackground,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                color: AppColors.onSurfaceVariant, size: 14),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -31,6 +31,7 @@ abstract class IAuthRepository {
     int? addressId,
     String? avatarUrl,
   });
+  Future<void> updateFcmToken(String token);
 }
 
 // ─── Mock ─────────────────────────────────────────────────────────────────────
@@ -120,6 +121,9 @@ class MockAuthRepository implements IAuthRepository {
       avatar: avatarUrl,
     );
   }
+
+  @override
+  Future<void> updateFcmToken(String token) async {}
 }
 
 // ─── Real API ─────────────────────────────────────────────────────────────────
@@ -261,6 +265,15 @@ class ApiAuthRepository implements IAuthRepository {
     final json = response.data!;
     if (json['code'] != 0) throw Exception(json['msg']);
     return UserModel.fromJson(json['data'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> updateFcmToken(String token) async {
+    try {
+      await _client.put(ApiEndpoints.memberFcmToken, data: {'fcmToken': token});
+    } catch (_) {
+      // Non-fatal: FCM token upload failure must not block login
+    }
   }
 
   @override

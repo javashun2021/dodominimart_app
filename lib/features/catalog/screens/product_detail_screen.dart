@@ -9,6 +9,9 @@ import '../../../core/widgets/loading_widget.dart';
 import '../../../main.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../cart/providers/cart_provider.dart';
+import '../../favorites/providers/favorite_provider.dart';
+import '../../reviews/models/review_model.dart';
+import '../../reviews/providers/review_provider.dart';
 import '../../group_buy/models/group_activity_model.dart';
 import '../../group_buy/providers/group_buy_provider.dart';
 import '../../orders/providers/orders_provider.dart' show addressesProvider;
@@ -45,6 +48,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Widget _buildDetail(BuildContext context, ProductModel product) {
     final cartQty =
         ref.watch(cartProvider.select((s) => s.quantityOf(product.id)));
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
+    final isFav = ref.watch(isFavoritedProvider(product.id));
 
     return Scaffold(
       body: CustomScrollView(
@@ -55,6 +60,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             backgroundColor: AppColors.background,
             foregroundColor: AppColors.onBackground,
             surfaceTintColor: Colors.transparent,
+            actions: [
+              if (isLoggedIn)
+                IconButton(
+                  onPressed: () => ref
+                      .read(favoriteIdsProvider.notifier)
+                      .toggle(product.id),
+                  icon: Icon(
+                    isFav ? Icons.favorite : Icons.favorite_border,
+                    color: isFav ? Colors.red : AppColors.onBackground,
+                  ),
+                ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: product.imageUrl != null
                   ? CachedNetworkImage(
@@ -125,6 +142,36 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       ),
                     ),
                   ],
+
+                  // Average score chip
+                  if (product.reviewCount > 0) ...[
+                    const Gap(8),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded,
+                              color: Color(0xFFFFC107), size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            product.avgScore!.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${product.reviewCount} review${product.reviewCount > 1 ? 's' : ''})',
+                            style: const TextStyle(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const Gap(16),
                   const Divider(),
                   const Gap(16),
@@ -154,6 +201,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       productId: product.id,
                     ),
                   ],
+
+                  // Reviews section
+                  const Gap(20),
+                  const Divider(),
+                  const Gap(12),
+                  _ReviewsSection(productId: product.id),
 
                   const Gap(32),
 
@@ -534,6 +587,154 @@ class _GroupBuySectionState extends ConsumerState<_GroupBuySection> {
         ],
       ),
     );
+  }
+}
+
+// ── 评价列表 ─────────────────────────────────────────────────────────────────────
+
+class _ReviewsSection extends ConsumerWidget {
+  final String productId;
+  const _ReviewsSection({required this.productId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviewsAsync = ref.watch(productReviewsProvider(productId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Reviews',
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: AppColors.onBackground),
+        ),
+        const Gap(12),
+        reviewsAsync.when(
+          loading: () => const SizedBox(
+            height: 60,
+            child: Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.primary, strokeWidth: 2)),
+          ),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (reviews) {
+            if (reviews.isEmpty) {
+              return const Text(
+                'No reviews yet. Be the first!',
+                style: TextStyle(
+                    color: AppColors.onSurfaceVariant, fontSize: 14),
+              );
+            }
+            final shown = reviews.take(5).toList();
+            return Column(
+              children: [
+                ...shown.map((r) => _ReviewTile(review: r)),
+                if (reviews.length > 5) ...[
+                  const Gap(8),
+                  Text(
+                    '+ ${reviews.length - 5} more reviews',
+                    style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ReviewTile extends StatelessWidget {
+  final ReviewModel review;
+  const _ReviewTile({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.primaryLight,
+                backgroundImage: review.resolvedAvatar != null
+                    ? NetworkImage(review.resolvedAvatar!)
+                    : null,
+                child: review.resolvedAvatar == null
+                    ? Text(
+                        review.memberNickname.isNotEmpty
+                            ? review.memberNickname[0].toUpperCase()
+                            : 'M',
+                        style: const TextStyle(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.memberNickname,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    Row(
+                      children: List.generate(
+                        5,
+                        (i) => Icon(
+                          i < review.score
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: i < review.score
+                              ? const Color(0xFFFFC107)
+                              : AppColors.border,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                _formatDate(review.createdAt),
+                style: const TextStyle(
+                    color: AppColors.onSurfaceVariant, fontSize: 11),
+              ),
+            ],
+          ),
+          if (review.content != null && review.content!.isNotEmpty) ...[
+            const Gap(6),
+            Padding(
+              padding: const EdgeInsets.only(left: 42),
+              child: Text(
+                review.content!,
+                style: const TextStyle(
+                    color: AppColors.onSurface, height: 1.5, fontSize: 13),
+              ),
+            ),
+          ],
+          const Gap(10),
+          const Divider(height: 1),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
   }
 }
 

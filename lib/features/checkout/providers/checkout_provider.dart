@@ -52,14 +52,22 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
   }) async {
     state = const CheckoutState.loading();
     try {
+      final selected = _cart.state.selectedItems;
+      if (selected.isEmpty) {
+        state = const CheckoutState.error('No items selected');
+        return;
+      }
       final request = PlaceOrderRequest(
         addressId: addressId,
         remark: remark,
-        cartItems: _cart.state.items,
+        cartItems: selected,
         paymentMethod: paymentMethod.toUpperCase(),
       );
       final order = await _orderRepo.placeOrder(request);
-      _cart.clearCart();
+      // Only remove selected items; unselected items remain in cart
+      for (final item in selected) {
+        _cart.removeItem(item.productId);
+      }
 
       if (paymentMethod.toUpperCase() == 'GCASH') {
         final gcashInfo = await _orderRepo.initiatePayment(order.id);

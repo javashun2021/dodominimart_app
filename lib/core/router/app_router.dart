@@ -25,9 +25,14 @@ import '../../features/orders/screens/order_detail_screen.dart';
 import '../../features/orders/screens/order_list_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/add_address_screen.dart';
+import '../../features/profile/screens/address_list_screen.dart';
 import '../../features/profile/screens/privacy_policy_screen.dart';
 import '../../features/profile/screens/terms_screen.dart';
 import '../../features/runner/models/runner_application_model.dart';
+import '../../features/favorites/screens/favorites_screen.dart';
+import '../../features/orders/models/order_model.dart';
+import '../../features/reviews/screens/submit_review_screen.dart';
 import '../../features/runner/screens/runner_apply_screen.dart';
 import '../../features/runner/screens/runner_dashboard_screen.dart';
 import '../../features/runner/screens/runner_history_screen.dart';
@@ -163,6 +168,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const EditProfileScreen(),
       ),
       GoRoute(
+        path: '/addresses',
+        builder: (_, state) =>
+            AddressListScreen(selectable: state.extra == true),
+      ),
+      GoRoute(
+        path: '/addresses/add',
+        builder: (_, __) => const AddAddressScreen(),
+      ),
+      GoRoute(
         path: '/payment/gcash/:orderId',
         builder: (_, state) => GCashPaymentScreen(
           orderId: state.pathParameters['orderId']!,
@@ -187,6 +201,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/group-buy/:inviteCode',
         builder: (_, state) => GroupBuyDetailScreen(
           inviteCode: state.pathParameters['inviteCode']!,
+        ),
+      ),
+      GoRoute(
+        path: '/favorites',
+        builder: (_, __) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: '/reviews/submit',
+        builder: (_, state) => SubmitReviewScreen(
+          order: state.extra as OrderModel,
         ),
       ),
       GoRoute(

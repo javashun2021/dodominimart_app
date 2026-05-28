@@ -23,6 +23,10 @@ class ProductModel {
   // Group Buy (null = no active group buy activity)
   final GroupActivityModel? groupActivity;
 
+  // Reviews (only filled on detail page)
+  final double? avgScore;
+  final int reviewCount;
+
   const ProductModel({
     required this.id,
     required this.name,
@@ -40,6 +44,8 @@ class ProductModel {
     this.flashSaleEndTime,
     this.flashStockLeft,
     this.groupActivity,
+    this.avgScore,
+    this.reviewCount = 0,
   });
 
   bool get isOutOfStock => stock <= 0 || !isAvailable;
@@ -81,6 +87,8 @@ class ProductModel {
       flashSaleEndTime: flashEnd,
       flashStockLeft: (json['flashStockLeft'] as num?)?.toInt(),
       groupActivity: groupActivity,
+      avgScore: (json['avgScore'] as num?)?.toDouble(),
+      reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

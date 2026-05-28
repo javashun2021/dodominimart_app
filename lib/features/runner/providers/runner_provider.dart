@@ -8,6 +8,38 @@ final runnerApplicationProvider =
   return ref.watch(runnerRepositoryProvider).getApplication();
 });
 
+final runnerMyStatsProvider = FutureProvider<Map<String, dynamic>>((ref) {
+  return ref.watch(runnerRepositoryProvider).getMyStats();
+});
+
+// ─── Online status notifier ───────────────────────────────────────────────────
+
+class OnlineStatusNotifier extends StateNotifier<AsyncValue<bool>> {
+  final IRunnerRepository _repo;
+  OnlineStatusNotifier(this._repo) : super(const AsyncValue.loading()) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final stats = await _repo.getMyStats();
+      state = AsyncValue.data(stats['isOnline'] == true);
+    } catch (_) {
+      state = const AsyncValue.data(false);
+    }
+  }
+
+  Future<void> toggle(bool isOnline) async {
+    await _repo.setOnlineStatus(isOnline);
+    state = AsyncValue.data(isOnline);
+  }
+}
+
+final onlineStatusProvider =
+    StateNotifierProvider<OnlineStatusNotifier, AsyncValue<bool>>((ref) {
+  return OnlineStatusNotifier(ref.watch(runnerRepositoryProvider));
+});
+
 final availableOrdersProvider = FutureProvider<List<OrderModel>>((ref) {
   return ref.watch(runnerRepositoryProvider).getAvailableOrders();
 });

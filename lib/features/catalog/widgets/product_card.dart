@@ -4,7 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../cart/providers/cart_provider.dart';
+import '../../favorites/providers/favorite_provider.dart';
 import '../models/product_model.dart';
 
 class ProductCard extends ConsumerWidget {
@@ -22,6 +24,8 @@ class ProductCard extends ConsumerWidget {
     final qty =
         ref.watch(cartProvider.select((s) => s.quantityOf(product.id)));
     final isOutOfStock = product.isOutOfStock;
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
+    final isFav = ref.watch(isFavoritedProvider(product.id));
 
     return GestureDetector(
       onTap: () => context.push('/products/${product.id}'),
@@ -144,6 +148,29 @@ class ProductCard extends ConsumerWidget {
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  // 收藏心形按钮
+                  if (isLoggedIn)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => ref
+                            .read(favoriteIdsProvider.notifier)
+                            .toggle(product.id),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            color: isFav ? Colors.red[300] : Colors.white,
+                            size: 15,
                           ),
                         ),
                       ),

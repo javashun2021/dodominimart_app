@@ -23,31 +23,50 @@ class FlashSaleScreen extends ConsumerWidget {
         foregroundColor: AppColors.onBackground,
         surfaceTintColor: Colors.transparent,
       ),
-      body: salesAsync.when(
-        loading: () => const LoadingWidget(),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (sales) {
-          if (sales.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.local_offer_outlined,
-                      size: 60, color: AppColors.border),
-                  Gap(12),
-                  Text('No active flash sales',
-                      style: TextStyle(color: AppColors.onSurfaceVariant)),
-                ],
-              ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: sales.length,
-            separatorBuilder: (_, __) => const Gap(12),
-            itemBuilder: (_, i) => _FlashSaleCard(sale: sales[i]),
-          );
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          ref.invalidate(activeFlashSalesProvider);
+          await ref.read(activeFlashSalesProvider.future);
         },
+        child: salesAsync.when(
+          loading: () => const LoadingWidget(),
+          error: (e, _) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(child: Text('Error: $e')),
+            ),
+          ),
+          data: (sales) {
+            if (sales.isEmpty) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 100),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.local_offer_outlined,
+                          size: 60, color: AppColors.border),
+                      Gap(12),
+                      Text('No active flash sales',
+                          style:
+                              TextStyle(color: AppColors.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: sales.length,
+              separatorBuilder: (_, __) => const Gap(12),
+              itemBuilder: (_, i) => _FlashSaleCard(sale: sales[i]),
+            );
+          },
+        ),
       ),
     );
   }

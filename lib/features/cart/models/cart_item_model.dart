@@ -7,6 +7,7 @@ class CartItemModel {
   final double unitPrice;
   final int quantity;
   final String unit;
+  final bool selected;
 
   const CartItemModel({
     required this.productId,
@@ -15,17 +16,19 @@ class CartItemModel {
     required this.unitPrice,
     required this.quantity,
     required this.unit,
+    this.selected = true,
   });
 
   double get subtotal => unitPrice * quantity;
 
-  CartItemModel copyWith({int? quantity}) => CartItemModel(
+  CartItemModel copyWith({int? quantity, bool? selected}) => CartItemModel(
         productId: productId,
         productName: productName,
         productImageUrl: productImageUrl,
         unitPrice: unitPrice,
         quantity: quantity ?? this.quantity,
         unit: unit,
+        selected: selected ?? this.selected,
       );
 
   factory CartItemModel.fromProduct(ProductModel product, {int quantity = 1}) =>
@@ -36,6 +39,7 @@ class CartItemModel {
         unitPrice: product.price,
         quantity: quantity,
         unit: product.unit,
+        selected: true,
       );
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) => CartItemModel(
@@ -45,6 +49,7 @@ class CartItemModel {
         unitPrice: (json['unitPrice'] as num).toDouble(),
         quantity: json['quantity'] as int,
         unit: json['unit'] as String,
+        selected: json['selected'] as bool? ?? true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -54,5 +59,6 @@ class CartItemModel {
         'unitPrice': unitPrice,
         'quantity': quantity,
         'unit': unit,
+        'selected': selected,
       };
 }

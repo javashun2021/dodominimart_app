@@ -19,6 +19,8 @@ class OrderModel {
   final String paymentMethod;   // "COD" | "GCASH"
   final String paymentStatus;   // "UNPAID" | "PAID" | "FAILED" | "REFUNDED"
   final String? runnerMemberId;
+  final String? runnerPhone;
+  final DateTime? runnerAcceptedTime;
   final String? orderSource;    // "NORMAL" | "FLASH_SALE" | "GROUP"
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -39,6 +41,8 @@ class OrderModel {
     required this.paymentMethod,
     this.paymentStatus = 'UNPAID',
     this.runnerMemberId,
+    this.runnerPhone,
+    this.runnerAcceptedTime,
     this.orderSource,
     required this.createdAt,
     this.updatedAt,
@@ -92,6 +96,10 @@ class OrderModel {
       paymentMethod: (json['paymentMethod'] as String?)?.toUpperCase() ?? 'COD',
       paymentStatus: (json['paymentStatus'] as String?)?.toUpperCase() ?? 'UNPAID',
       runnerMemberId: json['runnerMemberId']?.toString(),
+      runnerPhone: json['runnerPhone'] as String?,
+      runnerAcceptedTime: json['runnerAcceptedTime'] != null
+          ? _parseDate(json['runnerAcceptedTime'])
+          : null,
       orderSource: json['orderSource'] as String?,
       createdAt: _parseDate(json['createTime'] ?? json['createdAt']),
       updatedAt: json['updateTime'] != null

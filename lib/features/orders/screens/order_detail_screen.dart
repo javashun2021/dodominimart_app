@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/enums/order_status.dart';
+import '../../../core/models/app_config_model.dart';
+import '../../../core/providers/app_config_provider.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../runner/data/runner_repository.dart';
 import '../models/order_model.dart';
@@ -35,6 +39,8 @@ class _OrderDetailView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(appConfigProvider).valueOrNull ??
+        AppConfigModel.fallback;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -65,6 +71,44 @@ class _OrderDetailView extends ConsumerWidget {
                   _InfoRow(
                     icon: Icons.note_outlined,
                     text: order.deliveryNotes!,
+                  ),
+                ],
+                // Estimated arrival time
+                if (order.status == OrderStatus.outForDelivery &&
+                    order.runnerAcceptedTime != null) ...[
+                  const Gap(12),
+                  const Divider(height: 1),
+                  const Gap(12),
+                  _EtaBanner(
+                    acceptedAt: order.runnerAcceptedTime!,
+                    deliveryMinutes: config.deliveryMinutes,
+                  ),
+                ],
+                if (order.runnerPhone != null &&
+                    order.status == OrderStatus.outForDelivery) ...[
+                  const Gap(12),
+                  const Divider(height: 1),
+                  const Gap(12),
+                  Row(
+                    children: [
+                      const Icon(Icons.delivery_dining,
+                          size: 16, color: AppColors.info),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Runner: ${order.runnerPhone!}',
+                            style: const TextStyle(fontSize: 14)),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => launchUrl(
+                          Uri.parse('tel:${order.runnerPhone}'),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        icon: const Icon(Icons.call, size: 16),
+                        label: const Text('Call'),
+                        style: TextButton.styleFrom(
+                            foregroundColor: AppColors.success),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -138,6 +182,26 @@ class _OrderDetailView extends ConsumerWidget {
               order.runnerMemberId != null) ...[
             const Gap(16),
             _RateRunnerSection(order: order),
+          ],
+
+          // Write a Review button
+          if (order.status == OrderStatus.delivered) ...[
+            const Gap(16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/reviews/submit', extra: order),
+                icon: const Icon(Icons.rate_review_outlined, size: 18),
+                label: const Text('Write a Review'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
           ],
 
           // Cancel button
@@ -491,6 +555,39 @@ class _InfoRow extends StatelessWidget {
             style: const TextStyle(fontSize: 14),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _EtaBanner extends StatelessWidget {
+  final DateTime acceptedAt;
+  final int deliveryMinutes;
+
+  const _EtaBanner({required this.acceptedAt, required this.deliveryMinutes});
+
+  @override
+  Widget build(BuildContext context) {
+    final eta = acceptedAt.add(Duration(minutes: deliveryMinutes));
+    final now = DateTime.now();
+    final remaining = eta.difference(now).inMinutes;
+
+    final String label;
+    if (remaining > 0) {
+      label = 'Est. arrival in $remaining min';
+    } else {
+      label = 'Should arrive any moment';
+    }
+
+    return Row(
+      children: [
+        const Icon(Icons.timer_outlined, size: 16, color: AppColors.warning),
+        const SizedBox(width: 8),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.warning,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }

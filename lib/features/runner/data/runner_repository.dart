@@ -18,6 +18,8 @@ abstract class IRunnerRepository {
   Future<OrderModel> completeOrder(String orderId);
   Future<List<OrderModel>> getMyDeliveries();
   Future<void> rateRunner(String orderId, int score, String? comment);
+  Future<Map<String, dynamic>> getMyStats();
+  Future<void> setOnlineStatus(bool isOnline);
 }
 
 class ApiRunnerRepository implements IRunnerRepository {
@@ -102,6 +104,22 @@ class ApiRunnerRepository implements IRunnerRepository {
           'score': score,
           if (comment != null && comment.isNotEmpty) 'comment': comment,
         });
+    final json = response.data!;
+    if (json['code'] != 0) throw Exception(json['msg']);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getMyStats() async {
+    final response = await _client.get(ApiEndpoints.runnerMyStats);
+    final json = response.data!;
+    if (json['code'] != 0) throw Exception(json['msg']);
+    return (json['data'] as Map<String, dynamic>?) ?? {};
+  }
+
+  @override
+  Future<void> setOnlineStatus(bool isOnline) async {
+    final response = await _client.put(ApiEndpoints.runnerOnlineStatus,
+        data: {'isOnline': isOnline});
     final json = response.data!;
     if (json['code'] != 0) throw Exception(json['msg']);
   }

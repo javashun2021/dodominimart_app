@@ -34,9 +34,12 @@ abstract final class ApiEndpoints {
 
   // ── Member (JWT required) ─────────────────────────────────────────────────
   static const memberProfile = '/api/v1/member/profile'; // GET / PUT
+  static const memberFcmToken = '/api/v1/member/fcm-token'; // PUT
   static const memberAddresses = '/api/v1/member/addresses'; // GET / POST
   static String memberAddress(String id) =>
       '/api/v1/member/addresses/$id'; // PUT / DELETE
+  static String addressDefault(String id) =>
+      '/api/v1/member/addresses/$id/default'; // PUT
 
   // ── Catalog (no JWT required) ─────────────────────────────────────────────
   static const categories = '/api/v1/categories'; // GET
@@ -50,6 +53,22 @@ abstract final class ApiEndpoints {
       '/api/v1/orders/$id/cancel'; // POST {reason}
   static String orderPay(String id) =>
       '/api/v1/orders/$id/pay'; // POST → GCash payUrl
+  static String orderReviews(String id) =>
+      '/api/v1/orders/$id/reviews'; // POST {reviews:[{productId,score,content}]}
+  static String orderReviewedIds(String id) =>
+      '/api/v1/orders/$id/reviewed-ids'; // GET
+
+  // ── Reviews (public GET) ───────────────────────────────────────────────────
+  static String productReviews(String id) =>
+      '/api/v1/products/$id/reviews'; // GET
+
+  // ── Banners (no JWT required) ─────────────────────────────────────────────
+  static const banners = '/api/v1/banners'; // GET
+
+  // ── Favorites (JWT required) ──────────────────────────────────────────────
+  static const favorites    = '/api/v1/favorites';      // GET (list)
+  static const favoriteIds  = '/api/v1/favorites/ids';  // GET (id list)
+  static String favorite(String productId) => '/api/v1/favorites/$productId'; // POST / DELETE
 
   // ── Flash Sale (no JWT required) ─────────────────────────────────────────
   static const flashSales = '/api/v1/flash-sales'; // GET
@@ -74,6 +93,8 @@ abstract final class ApiEndpoints {
   static const runnerApplication     = '/api/v1/runner/application';        // GET / POST
   static const runnerAvailableOrders = '/api/v1/runner/available-orders';   // GET
   static const runnerMyDeliveries    = '/api/v1/runner/my-deliveries';      // GET
+  static const runnerMyStats         = '/api/v1/runner/my-stats';           // GET (JWT)
+  static const runnerOnlineStatus    = '/api/v1/runner/online-status';      // PUT (JWT)
   static String runnerAccept(String id)   => '/api/v1/runner/orders/$id/accept';   // POST
   static String runnerComplete(String id) => '/api/v1/runner/orders/$id/complete'; // POST
   static String rateRunner(String id)     => '/api/v1/orders/$id/rate-runner';     // POST

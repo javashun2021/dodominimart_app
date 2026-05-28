@@ -18,6 +18,14 @@ class CartState {
   double get subtotal => items.fold(0.0, (s, i) => s + i.subtotal);
   bool get isEmpty => items.isEmpty;
 
+  List<CartItemModel> get selectedItems =>
+      items.where((i) => i.selected).toList();
+
+  double get selectedSubtotal =>
+      selectedItems.fold(0.0, (s, i) => s + i.subtotal);
+
+  bool get allSelected => items.isNotEmpty && items.every((i) => i.selected);
+
   int quantityOf(String productId) =>
       items.where((i) => i.productId == productId).firstOrNull?.quantity ?? 0;
 }
@@ -93,6 +101,23 @@ class CartNotifier extends StateNotifier<CartState> {
 
   void clearCart() {
     state = const CartState.empty();
+    _save();
+  }
+
+  void toggleSelected(String productId) {
+    final updated = state.items
+        .map((i) => i.productId == productId
+            ? i.copyWith(selected: !i.selected)
+            : i)
+        .toList();
+    state = CartState(items: updated);
+    _save();
+  }
+
+  void selectAll(bool value) {
+    final updated =
+        state.items.map((i) => i.copyWith(selected: value)).toList();
+    state = CartState(items: updated);
     _save();
   }
 

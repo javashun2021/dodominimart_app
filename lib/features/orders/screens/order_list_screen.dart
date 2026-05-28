@@ -21,25 +21,38 @@ class OrderListScreen extends ConsumerWidget {
         title: const Text('My Orders',
             style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: ordersAsync.when(
-        loading: () => const LoadingWidget(),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (orders) {
-          if (orders.isEmpty) {
-            return _EmptyOrders(onBrowse: () => context.go('/products'));
-          }
-          return RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: () async => ref.invalidate(myOrdersProvider),
-            child: ListView.separated(
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          ref.invalidate(myOrdersProvider);
+          await ref.read(myOrdersProvider.future);
+        },
+        child: ordersAsync.when(
+          loading: () => const LoadingWidget(),
+          error: (e, _) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(child: Text('Error: $e')),
+            ),
+          ),
+          data: (orders) {
+            if (orders.isEmpty) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: _EmptyOrders(
+                    onBrowse: () => context.go('/products')),
+              );
+            }
+            return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: orders.length,
               separatorBuilder: (_, __) => const Gap(12),
               itemBuilder: (ctx, i) =>
                   _OrderTile(order: orders[i], index: i),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

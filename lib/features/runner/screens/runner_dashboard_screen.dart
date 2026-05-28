@@ -26,7 +26,7 @@ class RunnerDashboardScreen extends ConsumerWidget {
     final error = availableAsync.error ?? myDeliveriesAsync.error;
     if (error != null) {
       return Scaffold(
-        appBar: _appBar(context),
+        appBar: _appBar(context, ref),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -48,7 +48,7 @@ class RunnerDashboardScreen extends ConsumerWidget {
         .toList();
 
     return Scaffold(
-      appBar: _appBar(context),
+      appBar: _appBar(context, ref),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(availableOrdersProvider);
@@ -108,20 +108,62 @@ class RunnerDashboardScreen extends ConsumerWidget {
     );
   }
 
-  AppBar _appBar(BuildContext context) => AppBar(
-        title: const Text('Runner Dashboard',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.onBackground,
-        surfaceTintColor: Colors.transparent,
-        actions: [
-          TextButton.icon(
-            onPressed: () => context.push('/runner/history'),
-            icon: const Icon(Icons.history, size: 18),
-            label: const Text('History'),
-          ),
-        ],
-      );
+  AppBar _appBar(BuildContext context, WidgetRef ref) {
+    final onlineAsync = ref.watch(onlineStatusProvider);
+    final isOnline = onlineAsync.valueOrNull ?? false;
+
+    return AppBar(
+      title: const Text('Runner Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold)),
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.onBackground,
+      surfaceTintColor: Colors.transparent,
+      actions: [
+        Row(
+          children: [
+            Text(
+              isOnline ? 'Online' : 'Offline',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isOnline ? AppColors.success : AppColors.onSurfaceVariant,
+              ),
+            ),
+            Switch(
+              value: isOnline,
+              activeColor: AppColors.success,
+              onChanged: onlineAsync.isLoading
+                  ? null
+                  : (val) async {
+                      try {
+                        await ref
+                            .read(onlineStatusProvider.notifier)
+                            .toggle(val);
+                        if (val) {
+                          ref.invalidate(availableOrdersProvider);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(e.toString()),
+                                backgroundColor: AppColors.error),
+                          );
+                        }
+                      }
+                    },
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        TextButton.icon(
+          onPressed: () => context.push('/runner/history'),
+          icon: const Icon(Icons.history, size: 18),
+          label: const Text('History'),
+        ),
+      ],
+    );
+  }
 }
 
 class _SectionHeader extends StatelessWidget {

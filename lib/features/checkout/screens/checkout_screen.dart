@@ -68,6 +68,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final selectedItems = cart.selectedItems;
     final checkoutState = ref.watch(checkoutProvider);
     final isLoading = checkoutState.status == CheckoutStatus.loading;
     final configAsync = ref.watch(appConfigProvider);
@@ -75,7 +76,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     final deliveryFee = configAsync.valueOrNull?.deliveryFee ??
         AppConfigModel.fallback.deliveryFee;
-    final total = cart.subtotal + deliveryFee;
+    final total = cart.selectedSubtotal + deliveryFee;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,25 +98,34 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               data: (addresses) {
                 if (addresses.isEmpty) {
                   return _NoAddressCard(
-                      onTap: () => context.push('/onboarding'));
+                      onTap: () async {
+                        await context.push('/addresses/add');
+                        ref.invalidate(addressesProvider);
+                      });
                 }
                 if (_selectedAddressId == null) {
                   final def =
                       addresses.where((a) => a.isDefault).firstOrNull;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    setState(() =>
-                        _selectedAddressId = (def ?? addresses.first).addressId);
+                    if (mounted) {
+                      setState(() =>
+                          _selectedAddressId =
+                              (def ?? addresses.first).addressId);
+                    }
                   });
                 }
-                return Column(
-                  children: addresses
-                      .map((addr) => _AddressTile(
-                            address: addr,
-                            selected: _selectedAddressId == addr.addressId,
-                            onTap: () => setState(
-                                () => _selectedAddressId = addr.addressId),
-                          ))
-                      .toList(),
+                final selected = addresses
+                    .where((a) => a.addressId == _selectedAddressId)
+                    .firstOrNull;
+                return _SelectedAddressTile(
+                  address: selected,
+                  onTap: () async {
+                    final result = await context.push<int?>('/addresses',
+                        extra: true);
+                    if (result != null && mounted) {
+                      setState(() => _selectedAddressId = result);
+                    }
+                  },
                 );
               },
             ),
@@ -133,7 +143,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             const Gap(20),
             _SectionTitle('Order Summary'),
             const Gap(12),
-            ...cart.items.map((item) => Padding(
+            ...selectedItems.map((item) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
@@ -157,7 +167,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Subtotal'),
-                Text('₱${cart.subtotal.toStringAsFixed(0)}'),
+                Text('₱${cart.selectedSubtotal.toStringAsFixed(0)}'),
               ],
             ),
             const Gap(6),
@@ -254,84 +264,76 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 }
 
-class _AddressTile extends StatelessWidget {
-  final AddressModel address;
-  final bool selected;
+class _SelectedAddressTile extends StatelessWidget {
+  final AddressModel? address;
   final VoidCallback onTap;
 
-  const _AddressTile({
-    required this.address,
-    required this.selected,
-    required this.onTap,
-  });
+  const _SelectedAddressTile({required this.address, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primaryLight.withValues(alpha: 0.15)
-              : AppColors.background,
+          color: AppColors.primaryLight.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-            width: selected ? 1.5 : 1,
-          ),
+          border: Border.all(color: AppColors.primary, width: 1.5),
         ),
         child: Row(
           children: [
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: selected ? AppColors.primary : AppColors.border,
-              size: 20,
-            ),
+            const Icon(Icons.location_on_outlined,
+                color: AppColors.primary, size: 22),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(address.label,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 14)),
-                      if (address.isDefault) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight
-                                .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text('Default',
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.primaryDark)),
+              child: address == null
+                  ? const Text('Select a delivery address',
+                      style: TextStyle(color: AppColors.onSurfaceVariant))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(address!.label,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14)),
+                            if (address!.isDefault) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight
+                                      .withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text('Default',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.primaryDark)),
+                              ),
+                            ],
+                          ],
                         ),
+                        const SizedBox(height: 2),
+                        Text(address!.fullAddress,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.onSurfaceVariant)),
+                        if (address!.phone?.isNotEmpty == true) ...[
+                          const SizedBox(height: 2),
+                          Text(address!.phone!,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant)),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(address.fullAddress,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.onSurfaceVariant)),
-                  if (address.phone?.isNotEmpty == true) ...[
-                    const SizedBox(height: 2),
-                    Text(address.phone!,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.onSurfaceVariant)),
-                  ],
-                ],
-              ),
+                    ),
             ),
+            const Icon(Icons.chevron_right,
+                color: AppColors.onSurfaceVariant),
           ],
         ),
       ),

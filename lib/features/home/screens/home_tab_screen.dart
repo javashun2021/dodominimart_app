@@ -1,3 +1,5 @@
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +16,8 @@ import '../../../features/cart/providers/cart_provider.dart';
 import '../../../features/catalog/widgets/product_card.dart';
 import '../../../features/flash_sale/providers/flash_sale_provider.dart';
 import '../../../features/group_buy/providers/group_buy_provider.dart';
+import '../models/banner_model.dart';
+import '../providers/banner_provider.dart';
 
 String _timeGreeting() {
   final h = DateTime.now().hour;
@@ -33,6 +37,7 @@ class HomeTabScreen extends ConsumerWidget {
     final config = ref.watch(appConfigProvider).valueOrNull;
     final flashSalesAsync = ref.watch(activeFlashSalesProvider);
     final groupActivitiesAsync = ref.watch(activeGroupActivitiesProvider);
+    final bannersAsync = ref.watch(bannersProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
@@ -53,6 +58,11 @@ class HomeTabScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(productsProvider);
           ref.invalidate(categoriesProvider);
+          ref.invalidate(activeFlashSalesProvider);
+          ref.invalidate(activeGroupActivitiesProvider);
+          ref.invalidate(appConfigProvider);
+          ref.invalidate(bannersProvider);
+          await ref.read(productsProvider(null).future);
         },
         child: Align(
           alignment: Alignment.topCenter,
@@ -112,12 +122,29 @@ class HomeTabScreen extends ConsumerWidget {
             const Gap(12),
 
             // ── 横幅 ────────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: config?.hasAnnouncement == true
-                  ? _AnnouncementBanner(text: config!.announcement)
-                  : _StoreBanner(config: config),
-            ).animate().fadeIn(delay: 200.ms, duration: 350.ms).slideY(begin: 0.04, curve: Curves.easeOut),
+            Column(
+              children: [
+                if (config?.hasAnnouncement == true)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _AnnouncementBanner(text: config!.announcement),
+                  ).animate().fadeIn(delay: 150.ms, duration: 350.ms),
+                if (config?.hasAnnouncement == true) const Gap(10),
+                bannersAsync.when(
+                  loading: () => _BannerCarousel(banners: const []),
+                  error: (_, __) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _StoreBanner(config: config),
+                  ),
+                  data: (banners) => banners.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _StoreBanner(config: config),
+                        )
+                      : _BannerCarousel(banners: banners),
+                ).animate().fadeIn(delay: 200.ms, duration: 350.ms).slideY(begin: 0.04, curve: Curves.easeOut),
+              ],
+            ),
 
             const Gap(24),
 
@@ -496,6 +523,118 @@ class _CartBadge extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+// ── 轮播图 ────────────────────────────────────────────────────────────────────────
+
+class _BannerCarousel extends StatefulWidget {
+  final List<BannerModel> banners;
+  const _BannerCarousel({required this.banners});
+
+  @override
+  State<_BannerCarousel> createState() => _BannerCarouselState();
+}
+
+class _BannerCarouselState extends State<_BannerCarousel> {
+  int _current = 0;
+
+  void _handleTap(BannerModel banner) {
+    switch (banner.linkType) {
+      case BannerLinkType.product:
+        if (banner.linkValue != null) context.push('/products/${banner.linkValue}');
+      case BannerLinkType.group:
+        if (banner.linkValue != null) context.push('/group-buy/${banner.linkValue}');
+      case BannerLinkType.url:
+        if (banner.linkValue != null) {
+          launchUrl(Uri.parse(banner.linkValue!), mode: LaunchMode.externalApplication);
+        }
+      case BannerLinkType.none:
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.banners.isEmpty) {
+      return const SizedBox(height: 160);
+    }
+
+    return Column(
+      children: [
+        CarouselSlider(
+          options: CarouselOptions(
+            height: 160,
+            viewportFraction: 0.92,
+            autoPlay: widget.banners.length > 1,
+            autoPlayInterval: const Duration(seconds: 4),
+            autoPlayAnimationDuration: const Duration(milliseconds: 600),
+            autoPlayCurve: Curves.easeInOutCubic,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.04,
+            onPageChanged: (index, _) => setState(() => _current = index),
+          ),
+          items: widget.banners.map((banner) {
+            return GestureDetector(
+              onTap: () => _handleTap(banner),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: CachedNetworkImage(
+                  imageUrl: banner.resolvedImageUrl,
+                  width: double.infinity,
+                  height: 160,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (_, __, ___) => Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFF8540), Color(0xFFC2410C)],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.storefront_outlined,
+                          color: Colors.white, size: 48),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        if (widget.banners.length > 1) ...[
+          const Gap(10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.banners.length, (i) {
+              final active = i == _current;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: active ? 20 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: active
+                      ? AppColors.primary
+                      : AppColors.primary.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              );
+            }),
+          ),
+        ],
       ],
     );
   }

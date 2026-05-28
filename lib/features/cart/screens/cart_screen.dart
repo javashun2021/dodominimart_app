@@ -20,12 +20,26 @@ class CartScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Cart', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          if (!cart.isEmpty)
+          if (!cart.isEmpty) ...[
+            // Select-all checkbox
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('All', style: TextStyle(fontSize: 13)),
+                Checkbox(
+                  value: cart.allSelected,
+                  activeColor: AppColors.primary,
+                  onChanged: (v) =>
+                      ref.read(cartProvider.notifier).selectAll(v ?? true),
+                ),
+              ],
+            ),
             TextButton(
               onPressed: () => _confirmClear(context, ref),
               child: const Text('Clear',
                   style: TextStyle(color: AppColors.error)),
             ),
+          ],
         ],
       ),
       body: cart.isEmpty
@@ -91,16 +105,27 @@ class _CartTile extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
-        border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
+        border: Border.all(
+          color: item.selected ? AppColors.primary : AppColors.border,
+          width: item.selected ? 1.5 : 1,
+        ),
       ),
       child: Row(
         children: [
+          // Selection checkbox
+          Checkbox(
+            value: item.selected,
+            activeColor: AppColors.primary,
+            onChanged: (_) => ref
+                .read(cartProvider.notifier)
+                .toggleSelected(item.productId),
+          ),
           // Image
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: SizedBox(
-              width: 64,
-              height: 64,
+              width: 60,
+              height: 60,
               child: item.productImageUrl != null
                   ? CachedNetworkImage(
                       imageUrl: item.productImageUrl!,
@@ -110,7 +135,7 @@ class _CartTile extends ConsumerWidget {
                   : _imgPlaceholder(),
             ),
           ),
-          const Gap(12),
+          const Gap(10),
           // Name + price
           Expanded(
             child: Column(
@@ -222,7 +247,10 @@ class _OrderSummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const deliveryFee = ApiEndpoints.deliveryFee;
-    final total = cart.subtotal + deliveryFee;
+    final selectedCount = cart.selectedItems.length;
+    final subtotal = cart.selectedSubtotal;
+    final total = subtotal + deliveryFee;
+    final canCheckout = selectedCount > 0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -246,8 +274,8 @@ class _OrderSummary extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Subtotal'),
-                Text('₱${cart.subtotal.toStringAsFixed(0)}'),
+                Text('Subtotal ($selectedCount selected)'),
+                Text('₱${subtotal.toStringAsFixed(0)}'),
               ],
             ),
             const Gap(6),
@@ -283,8 +311,10 @@ class _OrderSummary extends ConsumerWidget {
             ),
             const Gap(12),
             ElevatedButton(
-              onPressed: () => context.push('/checkout'),
-              child: const Text('Proceed to Checkout'),
+              onPressed: canCheckout ? () => context.push('/checkout') : null,
+              child: Text(canCheckout
+                  ? 'Checkout ($selectedCount items)'
+                  : 'Select items to checkout'),
             ),
           ],
         ),

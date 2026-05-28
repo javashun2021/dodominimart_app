@@ -80,27 +80,39 @@ class ProductListScreen extends ConsumerWidget {
           const Divider(height: 1),
           // Products grid
           Expanded(
-            child: productsAsync.when(
-              loading: () => const LoadingWidget(),
-              error: (e, _) => Center(
-                child: Text('Error: $e'),
-              ),
-              data: (products) {
-                if (products.isEmpty) {
-                  return const EmptyStateWidget(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'No products found',
-                    subtitle: 'Try a different category.',
-                  );
-                }
-                final desktop = isDesktop(context);
-                final columns = desktop ? 4 : 2;
-                final padding = desktop ? 20.0 : 12.0;
-                return RefreshIndicator(
-                  color: AppColors.primary,
-                  onRefresh: () async =>
-                      ref.invalidate(productsProvider(selectedCatId)),
-                  child: centeredContent(
+            child: RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async {
+                ref.invalidate(productsProvider(selectedCatId));
+                await ref.read(productsProvider(selectedCatId).future);
+              },
+              child: productsAsync.when(
+                loading: () => const LoadingWidget(),
+                error: (e, _) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(child: Text('Error: $e')),
+                  ),
+                ),
+                data: (products) {
+                  if (products.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: const Padding(
+                        padding: EdgeInsets.only(top: 80),
+                        child: EmptyStateWidget(
+                          icon: Icons.inventory_2_outlined,
+                          title: 'No products found',
+                          subtitle: 'Try a different category.',
+                        ),
+                      ),
+                    );
+                  }
+                  final desktop = isDesktop(context);
+                  final columns = desktop ? 4 : 2;
+                  final padding = desktop ? 20.0 : 12.0;
+                  return centeredContent(
                     child: GridView.builder(
                       padding: EdgeInsets.all(padding),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -113,9 +125,9 @@ class ProductListScreen extends ConsumerWidget {
                       itemBuilder: (context, i) =>
                           ProductCard(product: products[i], animationIndex: i),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],

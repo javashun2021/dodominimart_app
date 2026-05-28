@@ -41,29 +41,132 @@ class RunnerHistoryScreen extends ConsumerWidget {
             final orders = allOrders
                 .where((o) => o.status == OrderStatus.delivered)
                 .toList();
-            if (orders.isEmpty) {
-              return const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.history_outlined,
-                        size: 60, color: AppColors.border),
-                    Gap(12),
-                    Text('No delivery history yet',
-                        style:
-                            TextStyle(color: AppColors.onSurfaceVariant)),
-                  ],
-                ),
-              );
-            }
             return ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: orders.length,
-              separatorBuilder: (_, __) => const Gap(12),
-              itemBuilder: (_, i) => _HistoryCard(order: orders[i]),
+              itemCount: orders.length + 1,
+              separatorBuilder: (_, i) => i == 0 ? const Gap(16) : const Gap(12),
+              itemBuilder: (_, i) {
+                if (i == 0) return const _StatsCard();
+                return _HistoryCard(order: orders[i - 1]);
+              },
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _StatsCard extends ConsumerWidget {
+  const _StatsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(runnerMyStatsProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: statsAsync.when(
+        loading: () => const Center(
+            child: SizedBox(
+                height: 40,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2))),
+        error: (_, __) => const SizedBox.shrink(),
+        data: (stats) {
+          final weekCount    = stats['weekDeliveries']  as int?    ?? 0;
+          final monthCount   = stats['monthDeliveries'] as int?    ?? 0;
+          final weekEarn     = (stats['weekEarnings']   as num?)   ?? 0;
+          final monthEarn    = (stats['monthEarnings']  as num?)   ?? 0;
+          final totalCount   = stats['totalDeliveries'] as int?    ?? 0;
+          final avgScore     = stats['averageScore'];
+
+          return Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.bar_chart, color: Colors.white70, size: 16),
+                  const SizedBox(width: 6),
+                  const Text('My Stats',
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500)),
+                  const Spacer(),
+                  if (avgScore != null)
+                    Row(children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 2),
+                      Text('$avgScore',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 12)),
+                    ]),
+                ],
+              ),
+              const Gap(12),
+              Row(
+                children: [
+                  _StatItem(label: 'This Week', count: weekCount,
+                      earnings: weekEarn.toDouble()),
+                  const SizedBox(width: 1,
+                      child: ColoredBox(color: Colors.white24,
+                          child: SizedBox(height: 40))),
+                  _StatItem(label: 'This Month', count: monthCount,
+                      earnings: monthEarn.toDouble()),
+                  const SizedBox(width: 1,
+                      child: ColoredBox(color: Colors.white24,
+                          child: SizedBox(height: 40))),
+                  _StatItem(label: 'All Time', count: totalCount,
+                      earnings: null),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String label;
+  final int count;
+  final double? earnings;
+  const _StatItem(
+      {required this.label, required this.count, required this.earnings});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text('$count',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold)),
+          Text('orders',
+              style: const TextStyle(color: Colors.white60, fontSize: 10)),
+          if (earnings != null) ...[
+            const Gap(2),
+            Text('₱${earnings!.toStringAsFixed(0)}',
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500)),
+          ],
+          const Gap(4),
+          Text(label,
+              style: const TextStyle(color: Colors.white54, fontSize: 10)),
+        ],
       ),
     );
   }

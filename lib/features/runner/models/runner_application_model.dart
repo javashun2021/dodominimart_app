@@ -9,6 +9,7 @@ class RunnerApplicationModel {
   final String? idPhotoUrl;
   final String? rejectReason;
   final DateTime? applyTime;
+  final bool isOnline;
 
   const RunnerApplicationModel({
     this.appId,
@@ -19,6 +20,7 @@ class RunnerApplicationModel {
     this.idPhotoUrl,
     this.rejectReason,
     this.applyTime,
+    this.isOnline = false,
   });
 
   bool get isNone     => status == 'none';
@@ -43,5 +45,6 @@ class RunnerApplicationModel {
         applyTime: json['applyTime'] != null
             ? DateTime.tryParse(json['applyTime'] as String)
             : null,
+        isOnline: json['isOnline'] == '1' || json['isOnline'] == true,
       );
 }
