@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.dodominimart.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
