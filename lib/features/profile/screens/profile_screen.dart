@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_config_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/providers/orders_provider.dart';
+import '../../points/providers/points_provider.dart';
 import '../../runner/models/runner_application_model.dart';
 import '../../runner/providers/runner_provider.dart';
 
@@ -22,6 +23,7 @@ class ProfileScreen extends ConsumerWidget {
         ?? (addresses.isNotEmpty ? addresses.first : null);
     final runnerAsync = ref.watch(runnerApplicationProvider);
     final isApprovedRunner = runnerAsync.valueOrNull?.isApproved == true;
+    final pointsBalance = ref.watch(pointsProvider).valueOrNull?.balance ?? 0;
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -231,7 +233,7 @@ class ProfileScreen extends ConsumerWidget {
 
           const Gap(16),
 
-          // ── My Favourites ────────────────────────────────────────────────
+          // ── Shopping ─────────────────────────────────────────────────────
           _SectionLabel('Shopping'),
           const Gap(10),
           Container(
@@ -239,13 +241,27 @@ class ProfileScreen extends ConsumerWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: _MenuTile(
-              icon: Icons.favorite_border_rounded,
-              iconColor: Colors.red[400]!,
-              label: 'My Favourites',
-              onTap: () => context.push('/favorites'),
-              isFirst: true,
-              isLast: true,
+            child: Column(
+              children: [
+                _MenuTile(
+                  icon: Icons.favorite_border_rounded,
+                  iconColor: Colors.red[400]!,
+                  label: 'My Favourites',
+                  onTap: () => context.push('/favorites'),
+                  isFirst: true,
+                  isLast: false,
+                ),
+                const Divider(height: 1, indent: 52, color: AppColors.divider),
+                _MenuTile(
+                  icon: Icons.stars_rounded,
+                  iconColor: Colors.amber[600]!,
+                  label: 'My Points',
+                  trailing: '$pointsBalance pts',
+                  onTap: () => context.push('/points-history'),
+                  isFirst: false,
+                  isLast: true,
+                ),
+              ],
             ),
           ),
           const Gap(16),
@@ -704,6 +720,7 @@ class _MenuTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String label;
+  final String? trailing;
   final VoidCallback onTap;
   final bool isFirst;
   final bool isLast;
@@ -713,6 +730,7 @@ class _MenuTile extends StatelessWidget {
     required this.iconColor,
     required this.label,
     required this.onTap,
+    this.trailing,
     this.isFirst = false,
     this.isLast = false,
   });
@@ -749,6 +767,17 @@ class _MenuTile extends StatelessWidget {
                 ),
               ),
             ),
+            if (trailing != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  trailing!,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+              ),
             const Icon(Icons.arrow_forward_ios,
                 color: AppColors.onSurfaceVariant, size: 14),
           ],

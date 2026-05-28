@@ -65,6 +65,9 @@ abstract final class ApiEndpoints {
   // ── Banners (no JWT required) ─────────────────────────────────────────────
   static const banners = '/api/v1/banners'; // GET
 
+  // ── Points (JWT required) ────────────────────────────────────────────────
+  static const points = '/api/v1/points'; // GET
+
   // ── Favorites (JWT required) ──────────────────────────────────────────────
   static const favorites    = '/api/v1/favorites';      // GET (list)
   static const favoriteIds  = '/api/v1/favorites/ids';  // GET (id list)

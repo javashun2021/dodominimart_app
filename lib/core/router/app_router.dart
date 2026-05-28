@@ -32,6 +32,7 @@ import '../../features/profile/screens/terms_screen.dart';
 import '../../features/runner/models/runner_application_model.dart';
 import '../../features/favorites/screens/favorites_screen.dart';
 import '../../features/orders/models/order_model.dart';
+import '../../features/points/screens/points_history_screen.dart';
 import '../../features/reviews/screens/submit_review_screen.dart';
 import '../../features/runner/screens/runner_apply_screen.dart';
 import '../../features/runner/screens/runner_dashboard_screen.dart';
@@ -206,6 +207,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/favorites',
         builder: (_, __) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: '/points-history',
+        builder: (_, __) => const PointsHistoryScreen(),
       ),
       GoRoute(
         path: '/reviews/submit',

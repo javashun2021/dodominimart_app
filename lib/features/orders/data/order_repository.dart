@@ -21,18 +21,21 @@ class PlaceOrderRequest {
   final String? remark;
   final List<CartItemModel> cartItems;
   final String paymentMethod; // "COD" | "GCASH"
+  final int pointsToUse;
 
   const PlaceOrderRequest({
     required this.addressId,
     this.remark,
     required this.cartItems,
     this.paymentMethod = 'COD',
+    this.pointsToUse = 0,
   });
 
   Map<String, dynamic> toJson() => {
         'addressId': addressId,
         'remark': remark ?? '',
         'paymentMethod': paymentMethod,
+        'pointsToUse': pointsToUse,
         'items': cartItems.map((e) => {
               'productId': int.tryParse(e.productId) ?? 0,
               'quantity': e.quantity,

@@ -10,6 +10,7 @@ import '../../../core/widgets/loading_widget.dart';
 import '../../auth/models/address_model.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../orders/providers/orders_provider.dart';
+import '../../points/providers/points_provider.dart';
 import '../providers/checkout_provider.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _notesCtrl = TextEditingController();
   int? _selectedAddressId;
   String _paymentMethod = 'COD'; // "COD" | "GCASH"
+  bool _usePoints = false;
 
   @override
   void dispose() {
@@ -39,10 +41,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       );
       return;
     }
+    final pointsBalance = ref.read(pointsProvider).valueOrNull?.balance ?? 0;
+    final pointsToUse = _usePoints ? ((pointsBalance ~/ 100) * 100) : 0;
+
     await ref.read(checkoutProvider.notifier).placeOrder(
           addressId: _selectedAddressId!,
           remark: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
           paymentMethod: _paymentMethod,
+          pointsToUse: pointsToUse,
         );
     if (!mounted) return;
     final state = ref.read(checkoutProvider);
@@ -76,7 +82,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     final deliveryFee = configAsync.valueOrNull?.deliveryFee ??
         AppConfigModel.fallback.deliveryFee;
-    final total = cart.selectedSubtotal + deliveryFee;
+    final pointsAsync = ref.watch(pointsProvider);
+    final pointsBalance = pointsAsync.valueOrNull?.balance ?? 0;
+    final pointsToUse = _usePoints ? ((pointsBalance ~/ 100) * 100) : 0;
+    final pointsDiscount = pointsToUse / 10.0;
+    final total = (cart.selectedSubtotal + deliveryFee - pointsDiscount).clamp(0.0, double.infinity);
 
     return Scaffold(
       appBar: AppBar(
@@ -178,6 +188,62 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Text('₱${deliveryFee.toStringAsFixed(0)}'),
               ],
             ),
+            // ── 积分抵扣 ──────────────────────────────────────────────
+            if (pointsBalance > 0) ...[
+              const Gap(6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.stars_rounded, color: Colors.amber[700], size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Use $pointsBalance pts  (−₱${(pointsBalance ~/ 100) * 10})',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber[800],
+                            ),
+                          ),
+                          Text(
+                            '100 pts = ₱10 discount',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.amber[700]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _usePoints,
+                      activeThumbColor: Colors.amber[700],
+                      onChanged: (v) => setState(() => _usePoints = v),
+                    ),
+                  ],
+                ),
+              ),
+              if (_usePoints) ...[
+                const Gap(6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Points discount',
+                        style: TextStyle(color: AppColors.success)),
+                    Text('−₱${pointsDiscount.toStringAsFixed(0)}',
+                        style: const TextStyle(color: AppColors.success,
+                            fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ],
+            ],
             const Gap(8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -49,6 +49,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
     required int addressId,
     String? remark,
     String paymentMethod = 'COD',
+    int pointsToUse = 0,
   }) async {
     state = const CheckoutState.loading();
     try {
@@ -62,6 +63,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         remark: remark,
         cartItems: selected,
         paymentMethod: paymentMethod.toUpperCase(),
+        pointsToUse: pointsToUse,
       );
       final order = await _orderRepo.placeOrder(request);
       // Only remove selected items; unselected items remain in cart
