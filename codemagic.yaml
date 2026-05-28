@@ -1,0 +1,88 @@
+workflows:
+
+  # ── Android Release APK ─────────────────────────────────────────────────────
+  android-release:
+    name: Android Release APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      flutter: stable
+      vars:
+        PACKAGE_NAME: "com.dodominimart.app"
+      # Codemagic 会自动把这些变量注入构建环境
+      # CM_KEYSTORE / CM_KEYSTORE_PASSWORD / CM_KEY_ALIAS / CM_KEY_PASSWORD
+      # GOOGLE_SERVICES_JSON  ← base64 编码的 google-services.json
+
+    scripts:
+      - name: Decode google-services.json
+        script: |
+          echo $GOOGLE_SERVICES_JSON | base64 --decode > $CM_BUILD_DIR/android/app/google-services.json
+
+      - name: Decode keystore
+        script: |
+          echo $CM_KEYSTORE | base64 --decode > $CM_BUILD_DIR/android/app/keystore.jks
+
+      - name: Flutter pub get
+        script: flutter pub get
+
+      - name: Build release APK
+        script: |
+          flutter build apk --release \
+            --dart-define=FLUTTER_BUILD_NUMBER=$BUILD_NUMBER
+
+    artifacts:
+      - build/**/outputs/**/*.apk
+      - flutter_drive.log
+
+    publishing:
+      email:
+        recipients:
+          - javashun2021@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ── Web Build + Deploy to Server ────────────────────────────────────────────
+  web-deploy:
+    name: Web Build & Deploy
+    max_build_duration: 30
+    instance_type: linux_x2
+
+    environment:
+      flutter: stable
+      vars:
+        SSH_HOST: "8.222.208.133"
+        SSH_USER: "root"
+        WEB_ROOT: "/var/www/dodominimart"
+      # SSH_PRIVATE_KEY ← base64 编码的 SSH 私钥（见下方说明）
+
+    scripts:
+      - name: Flutter pub get
+        script: flutter pub get
+
+      - name: Build Web
+        script: flutter build web --release
+
+      - name: Setup SSH key
+        script: |
+          mkdir -p ~/.ssh
+          echo $SSH_PRIVATE_KEY | base64 --decode > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        script: |
+          cd build/web
+          tar -czf /tmp/web.tar.gz .
+          scp -i ~/.ssh/id_ed25519 /tmp/web.tar.gz $SSH_USER@$SSH_HOST:/tmp/web.tar.gz
+          ssh -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST \
+            "rm -rf $WEB_ROOT/* && tar -xzf /tmp/web.tar.gz -C $WEB_ROOT && nginx -t && systemctl reload nginx && echo 'Deploy OK'"
+
+    publishing:
+      email:
+        recipients:
+          - javashun2021@gmail.com
+        notify:
+          success: true
+          failure: true

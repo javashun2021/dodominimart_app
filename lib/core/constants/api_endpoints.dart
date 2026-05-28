@@ -5,7 +5,7 @@ abstract final class ApiEndpoints {
   // Chrome / desktop → localhost:8080 directly
   //本地=localhost，线上=dodominimart.com
   static String get baseUrl {
-    if (kIsWeb) return 'http://127.0.0.1'; //web
+    if (kIsWeb) return 'https://dodominimart.com'; //web
     if (_isAndroid) return 'https://dodominimart.com'; // 内网真机
     return 'https://dodominimart.com'; // macOS/Windows 桌面直连
   }
