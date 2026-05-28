@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/fcm_service.dart';
+import '../../../core/services/sse_notification_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../data/auth_repository.dart';
 import '../models/login_response.dart';
@@ -76,10 +77,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.saveToken(response.token);
     final user = await _repository.getUserInfo();
     state = AuthState.authenticated(user);
-    // Upload FCM token — non-blocking, must not throw
+    // Mobile: upload FCM token; Web: connect SSE — both non-blocking
     try {
       final fcmToken = await FcmService.getToken();
       if (fcmToken != null) await _repository.updateFcmToken(fcmToken);
+    } catch (_) {}
+    try {
+      SseNotificationService.connect(response.token);
     } catch (_) {}
   }
 
@@ -148,6 +152,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    SseNotificationService.disconnect();
     try {
       await _repository.logout();
     } catch (_) {}

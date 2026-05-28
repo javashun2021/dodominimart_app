@@ -42,7 +42,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       return;
     }
     final pointsBalance = ref.read(pointsProvider).valueOrNull?.balance ?? 0;
-    final pointsToUse = _usePoints ? ((pointsBalance ~/ 100) * 100) : 0;
+    final pointsToUse = _usePoints ? (pointsBalance ~/ 100) * 100 : 0;
 
     await ref.read(checkoutProvider.notifier).placeOrder(
           addressId: _selectedAddressId!,
@@ -84,8 +84,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         AppConfigModel.fallback.deliveryFee;
     final pointsAsync = ref.watch(pointsProvider);
     final pointsBalance = pointsAsync.valueOrNull?.balance ?? 0;
-    final pointsToUse = _usePoints ? ((pointsBalance ~/ 100) * 100) : 0;
-    final pointsDiscount = pointsToUse / 10.0;
+    final redeemablePoints = (pointsBalance ~/ 100) * 100;
+    final pointsToUse = _usePoints ? redeemablePoints : 0;
+    final pointsDiscount = pointsToUse / 10.0; // 100 pts = ₱10
     final total = (cart.selectedSubtotal + deliveryFee - pointsDiscount).clamp(0.0, double.infinity);
 
     return Scaffold(
@@ -207,7 +208,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Use $pointsBalance pts  (−₱${(pointsBalance ~/ 100) * 10})',
+                            'Use $pointsBalance pts  (−₱${redeemablePoints ~/ 10})',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -225,7 +226,20 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     Switch(
                       value: _usePoints,
                       activeThumbColor: Colors.amber[700],
-                      onChanged: (v) => setState(() => _usePoints = v),
+                      onChanged: (v) {
+                        if (v && pointsBalance < 100) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'You need at least 100 points to redeem. Keep earning!',
+                              ),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() => _usePoints = v);
+                      },
                     ),
                   ],
                 ),

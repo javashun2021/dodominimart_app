@@ -20,6 +20,8 @@ class FcmService {
 
   /// Call once in main() before runApp.
   static Future<void> initialize() async {
+    if (kIsWeb) return; // Web uses WebSocket; skip Firebase entirely
+
     try {
       await Firebase.initializeApp();
     } catch (e) {
@@ -29,53 +31,43 @@ class FcmService {
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Request permission (Android 13+ and iOS)
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    if (!kIsWeb) {
-      await _initLocalNotifications();
+    await _initLocalNotifications();
 
-      // iOS: let firebase_messaging show the banner natively in foreground
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await FirebaseMessaging.instance
-            .setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-      }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
     }
 
-    // Foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (kIsWeb) return;
       final notification = message.notification;
       if (notification == null) return;
-
-      // Android only — iOS already shows the system banner above
       if (defaultTargetPlatform == TargetPlatform.android) {
         _showLocalNotification(
-          title:   notification.title ?? 'DODO MiniMart',
-          body:    notification.body  ?? '',
+          title:     notification.title ?? 'DODO MiniMart',
+          body:      notification.body  ?? '',
           routePath: _routeFrom(message.data),
         );
       }
     });
 
-    // Notification tap — background state
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
-
-    // Notification tap — app was terminated
     FirebaseMessaging.instance.getInitialMessage().then(_handleMessage);
   }
 
   /// Call after the GoRouter instance is created (inside build).
   static void setRouter(GoRouter router) {
     _router = router;
+    if (kIsWeb) return;
     FirebaseMessaging.instance.getInitialMessage().then(_handleMessage);
   }
 
@@ -152,8 +144,9 @@ class FcmService {
     if (route != null) _router!.push(route);
   }
 
-  /// Returns the current device FCM token, or null if unavailable.
+  /// Returns the current device FCM token, or null on web/unavailable.
   static Future<String?> getToken() async {
+    if (kIsWeb) return null;
     try {
       return await FirebaseMessaging.instance.getToken();
     } catch (e) {
