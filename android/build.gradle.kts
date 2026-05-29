@@ -17,15 +17,13 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
-    plugins.withId("com.android.application") {
-        extensions.configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
-        }
-    }
-    plugins.withId("com.android.library") {
-        extensions.configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
-        }
+}
+
+// After all projects are evaluated, force compileSdk 36 on every Android module
+gradle.projectsEvaluated {
+    subprojects {
+        extensions.findByType<com.android.build.gradle.BaseExtension>()
+            ?.compileSdkVersion(36)
     }
 }
 
