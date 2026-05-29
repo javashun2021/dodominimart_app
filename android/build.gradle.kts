@@ -19,14 +19,6 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// After all projects are evaluated, force compileSdk 36 on every Android module
-gradle.projectsEvaluated {
-    subprojects {
-        extensions.findByType<com.android.build.gradle.BaseExtension>()
-            ?.compileSdkVersion(36)
-    }
-}
-
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

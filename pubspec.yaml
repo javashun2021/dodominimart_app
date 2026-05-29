@@ -48,7 +48,7 @@ dependencies:
   shimmer: ^3.0.0
   smooth_page_indicator: ^1.1.0
   carousel_slider: ^5.0.0
-  fluttertoast: ^8.2.8
+  fluttertoast: ^9.1.0
   intl: ^0.19.0
   equatable: ^2.0.5
 
